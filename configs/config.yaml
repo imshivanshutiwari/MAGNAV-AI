@@ -1,0 +1,100 @@
+project:
+  name: MAGNAV-AI
+  version: "1.0.0"
+  description: "Real-Time Magnetic Navigation using Sensor Fusion"
+
+data:
+  emag2:
+    cache_dir: "data/cache/emag2"
+    url: "https://www.ngdc.noaa.gov/geomag/emag2/emag2.nc"
+    resolution_arcmin: 2
+    altitude_km: 0.0
+  igrf:
+    model: "IGRF13"
+    cache_dir: "data/cache/igrf"
+
+sensors:
+  imu:
+    accel_noise_std: 0.001
+    gyro_noise_std: 0.0001
+    accel_bias_std: 0.0001
+    gyro_bias_std: 0.00001
+    update_rate_hz: 100
+  magnetometer:
+    noise_std: 5.0
+    hard_iron: [20.0, -15.0, 10.0]
+    soft_iron: [[1.02, 0.01, -0.005], [0.01, 0.98, 0.003], [-0.005, 0.003, 1.01]]
+    update_rate_hz: 10
+  barometer:
+    noise_std: 0.5
+    bias: 0.0
+    update_rate_hz: 50
+
+filters:
+  ekf:
+    state_dim: 15
+    obs_dim: 3
+    process_noise_pos: 0.01
+    process_noise_vel: 0.1
+    process_noise_att: 0.001
+    process_noise_gyro_bias: 0.00001
+    process_noise_accel_bias: 0.0001
+    measurement_noise: 25.0
+  ukf:
+    state_dim: 15
+    obs_dim: 3
+    alpha: 0.001
+    beta: 2.0
+    kappa: 0.0
+    measurement_noise: 25.0
+  particle_filter:
+    n_particles: 500
+    state_dim: 9
+    process_noise_pos: 0.1
+    process_noise_vel: 0.5
+    process_noise_att: 0.01
+    resample_threshold: 0.5
+    measurement_noise: 25.0
+
+models:
+  drift_transformer:
+    input_dim: 3
+    d_model: 256
+    nhead: 8
+    num_encoder_layers: 6
+    dim_feedforward: 1024
+    dropout: 0.1
+    output_dim: 3
+    seq_len: 50
+  drift_lstm:
+    input_dim: 3
+    hidden_dim: 256
+    num_layers: 3
+    output_dim: 3
+    dropout: 0.2
+    seq_len: 50
+  anomaly_vae:
+    input_dim: 3
+    latent_dim: 32
+    hidden_dim: 128
+    anomaly_percentile: 95
+
+streaming:
+  buffer_size: 1000
+  websocket_host: "0.0.0.0"
+  websocket_port: 8765
+  target_latency_ms: 100
+
+dashboard:
+  host: "0.0.0.0"
+  port: 8050
+  debug: false
+  update_interval_ms: 500
+  theme: "DARKLY"
+
+pipeline:
+  simulation_steps: 1000
+  dt: 0.01
+  initial_lat: 40.0
+  initial_lon: -74.0
+  initial_alt: 0.0
